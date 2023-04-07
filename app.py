@@ -1,13 +1,17 @@
-from flask import Flask
-from redis import Redis
-import os
-import socket
+FROM python:3.9.5-slim
 
-app = Flask(__name__)
-redis = Redis(host=os.environ.get('REDIS_HOST', '127.0.0.1'), port=6379)
+RUN pip  install flask redis  && \
+    groupadd -r flask && useradd -r -g flask flask && \
+    mkdir /src  && \
+    chown -R flask:flask /src
 
+USER flask
 
-@app.route('/')
-def hello():
-    redis.incr('hits')
-    return f"Hello Container World! I have been seen {redis.get('hits').decode('utf-8')} times and my hostname is {socket.gethostname()}.\n"
+COPY app.py  /src/app.py
+
+WORKDIR /src
+
+ENV FLASK_APP=app.py REDIS_HOST=redis
+EXPOSE 5000
+
+CMD [ "flask","run","-h","0.0.0.0" ]
